@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Currency Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-start: #0f172a;
+            --bg-gradient-end: #1e1b4b;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --card-shadow: rgba(0, 0, 0, 0.5);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --accent-start: #3b82f6;
+            --accent-end: #8b5cf6;
+            --input-bg: rgba(15, 23, 42, 0.6);
+            --input-border: rgba(255, 255, 255, 0.2);
+            --input-focus: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated Background Elements */
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.6;
+            animation: float 10s infinite alternate ease-in-out;
+        }
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-start);
+            top: -10%;
+            left: -10%;
+        }
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-end);
+            bottom: -20%;
+            right: -10%;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, 50px) scale(1.1); }
+        }
+
+        /* Glassmorphism Card */
+        .converter-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px var(--card-shadow);
+            z-index: 1;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .currency-select-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.2s ease;
+        }
+        
+        .currency-select-wrapper:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .currency-select {
+            background: transparent;
+            color: var(--text-primary);
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            padding-right: 20px;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .currency-select-wrapper::after {
+            content: '▼';
+            font-size: 10px;
+            position: absolute;
+            right: 10px;
+            pointer-events: none;
+            color: var(--text-secondary);
+        }
+
+        .currency-select option {
+            background: var(--bg-gradient-end);
+            color: var(--text-primary);
+        }
+
+        .rate-hint {
+            font-size: 12px;
+            font-weight: 400;
+            opacity: 0.7;
+            text-align: right;
+            max-width: 150px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: var(--input-bg);
+            border: 2px solid var(--input-border);
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+            background: rgba(15, 23, 42, 0.8);
+        }
+        
+        input[type="number"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .swap-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+            margin: -10px auto 15px auto;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .swap-icon:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+        }
+
+        .swap-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            z-index: 1;
+            opacity: 0.7;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Loader */
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-secondary);
+            border-top: 2px solid var(--accent-end);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="converter-card">
+        <header>
+            <h1>Global Currency Converter</h1>
+            <p class="subtitle">Live exchange rates updated daily.</p>
+        </header>
+        
+        <div class="loader" id="loader"></div>
+
+        <div class="input-group">
+            <div class="input-label">
+                <div class="currency-select-wrapper">
+                    <select id="from-currency" class="currency-select">
+                        <option value="usd">Loading...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-wrapper">
+                <input type="number" id="from-input" placeholder="0.00" step="any" min="0" disabled>
+            </div>
+        </div>
+
+        <div class="swap-icon" id="swap-btn" title="Swap currencies">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </div>
+
+        <div class="input-group">
+            <div class="input-label">
+                <div class="currency-select-wrapper">
+                    <select id="to-currency" class="currency-select">
+                        <option value="inr">Loading...</option>
+                    </select>
+                </div>
+                <span class="rate-hint" id="rate-hint"></span>
+            </div>
+            <div class="input-wrapper">
+                <input type="number" id="to-input" placeholder="0.00" step="any" min="0" disabled>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer" id="footer-text">
+        Fetching latest rates...
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fromInput = document.getElementById('from-input');
+            const toInput = document.getElementById('to-input');
+            const fromCurrency = document.getElementById('from-currency');
+            const toCurrency = document.getElementById('to-currency');
+            const swapBtn = document.getElementById('swap-btn');
+            const rateHint = document.getElementById('rate-hint');
+            const footerText = document.getElementById('footer-text');
+            const loader = document.getElementById('loader');
+
+            let exchangeRates = {};
+            let isFetching = false;
+            let lastEdited = 'from'; // tracks which input was modified last
+
+            // Ensure consistent decimal formatting
+            const formatNumber = (num) => {
+                if (isNaN(num)) return '';
+                // 4 decimal places for precision on most conversions, strip trailing zeros
+                return parseFloat(num.toFixed(6)).toString();
+            };
+
+            const toggleInputs = (disabled) => {
+                fromInput.disabled = disabled;
+                toInput.disabled = disabled;
+                fromCurrency.disabled = disabled;
+                toCurrency.disabled = disabled;
+            };
+
+            async function init() {
+                try {
+                    toggleInputs(true);
+                    // Fetch list of all currencies
+                    const response = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json');
+                    const currencies = await response.json();
+                    
+                    const validCurrencies = Object.entries(currencies)
+                        .filter(([code, name]) => name && name.trim() !== '')
+                        .sort((a,b) => a[1].localeCompare(b[1]));
+
+                    populateDropdown(fromCurrency, validCurrencies, 'usd');
+                    populateDropdown(toCurrency, validCurrencies, 'npr');
+                    
+                    await fetchExchangeRates();
+                    
+                    toggleInputs(false);
+                    // Focus logic
+                    fromInput.focus();
+                } catch(err) {
+                    console.error("Error fetching currencies", err);
+                    footerText.textContent = "Failed to load currencies. Please check your connection.";
+                    toggleInputs(false);
+                }
+            }
+
+            function populateDropdown(selectElement, validCurrencies, defaultCode) {
+                selectElement.innerHTML = '';
+                validCurrencies.forEach(([code, name]) => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${code.toUpperCase()} - ${name}`;
+                    if(code === defaultCode) option.selected = true;
+                    selectElement.appendChild(option);
+                });
+            }
+
+            async function fetchExchangeRates() {
+                const baseCode = fromCurrency.value;
+                if (!baseCode) return;
+                
+                isFetching = true;
+                loader.style.display = 'block';
+                footerText.textContent = "Updating rates...";
+                
+                try {
+                    const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${baseCode}.json`);
+                    const data = await response.json();
+                    exchangeRates = data[baseCode];
+                    
+                    const dateObj = new Date(data.date);
+                    footerText.textContent = `Live rates from ${dateObj.toLocaleDateString()}`;
+                    
+                    updateCalculations();
+                } catch(err) {
+                    console.error("error fetching rates", err);
+                    footerText.textContent = "Failed to fetch live rates.";
+                } finally {
+                    isFetching = false;
+                    loader.style.display = 'none';
+                }
+            }
+
+            function updateCalculations() {
+                if (isFetching || !exchangeRates) return;
+                
+                const fromCode = fromCurrency.value;
+                const toCode = toCurrency.value;
+                const rate = exchangeRates[toCode] || 0;
+                
+                rateHint.textContent = `1 ${fromCode.toUpperCase()} = ${formatNumber(rate)} ${toCode.toUpperCase()}`;
+
+                if (lastEdited === 'from') {
+                    const fromValue = parseFloat(fromInput.value);
+                    if (!isNaN(fromValue) && fromValue >= 0) {
+                        toInput.value = formatNumber(fromValue * rate);
+                    } else {
+                        toInput.value = '';
+                    }
+                } else if (lastEdited === 'to') {
+                    const toValue = parseFloat(toInput.value);
+                    if (!isNaN(toValue) && toValue >= 0 && rate > 0) {
+                        fromInput.value = formatNumber(toValue / rate);
+                    } else {
+                        fromInput.value = '';
+                    }
+                }
+            }
+
+            // Event Listeners
+            fromInput.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (isNaN(val) || val < 0) {
+                    toInput.value = '';
+                    if (e.target.value !== '') e.target.value = '';
+                    return;
+                }
+                lastEdited = 'from';
+                updateCalculations();
+            });
+
+            toInput.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (isNaN(val) || val < 0) {
+                    fromInput.value = '';
+                    if (e.target.value !== '') e.target.value = '';
+                    return;
+                }
+                lastEdited = 'to';
+                updateCalculations();
+            });
+
+            fromCurrency.addEventListener('change', () => {
+                if (fromInput.value !== '') lastEdited = 'from';
+                fetchExchangeRates();
+            });
+
+            toCurrency.addEventListener('change', () => {
+                if (fromInput.value !== '') lastEdited = 'from';
+                updateCalculations();
+            });
+
+            swapBtn.addEventListener('click', () => {
+                if(isFetching) return;
+                
+                const tempCode = fromCurrency.value;
+                fromCurrency.value = toCurrency.value;
+                toCurrency.value = tempCode;
+                
+                // Swap the input values as well to reflect the visual swap
+                const tempVal = fromInput.value;
+                fromInput.value = toInput.value;
+                toInput.value = tempVal;
+                
+                // Re-fetch base rates for the new from currency
+                lastEdited = 'from'; 
+                fetchExchangeRates();
+            });
+
+            // Smooth interaction animations
+            const inputs = [fromInput, toInput];
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    input.parentElement.parentElement.style.transform = 'scale(1.02)';
+                });
+                input.addEventListener('blur', () => {
+                    input.parentElement.parentElement.style.transform = 'scale(1)';
+                });
+            });
+
+            // Load application
+            init();
+        });
+    </script>
+</body>
+</html>
